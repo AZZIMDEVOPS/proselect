@@ -16,7 +16,11 @@ export const metadata: Metadata = {
 export default function HowItWorksPage() {
   return (
     <>
-      <PageHero eyebrow="How it works" title="A transparent, milestone-based procurement journey.">
+      <PageHero
+        eyebrow="How it works"
+        title="A transparent, milestone-based procurement journey."
+        image="/images/nairobi-skyline.jpg"
+      >
         Four phases, twelve tracked milestones, one accountable team.
       </PageHero>
 
