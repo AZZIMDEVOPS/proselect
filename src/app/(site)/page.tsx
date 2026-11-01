@@ -65,13 +65,13 @@ export default async function HomePage() {
       </section>
 
       {/* 4. SOLUTIONS (Mist Gray: #E8EDF2) */}
-      <section className="section-y bg-[#E8EDF2]">
+      <section id="solutions" className="section-y scroll-mt-20 bg-[#E8EDF2]">
         <div className="container-x">
           <Reveal><SectionHead eyebrow="Core business solutions" title="Three Divisions. One Procurement Partner.">Specialised equipment sourced to your project specification from international manufacturing partners.</SectionHead></Reveal>
           <div className="mt-14 grid gap-6 lg:grid-cols-3">
             {SOLUTIONS.map((s, i) => (
               <Reveal key={s.slug} delay={i * 0.1}>
-                <article className="group flex h-full flex-col overflow-hidden rounded-xl border border-[#C4CCD4] bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lift">
+                <article id={s.slug} className="group flex h-full flex-col overflow-hidden rounded-xl border border-[#C4CCD4] bg-white shadow-card transition duration-300 hover:-translate-y-1 hover:shadow-lift scroll-mt-24">
                   <div className="relative aspect-[16/11] overflow-hidden">
                     <Image src={s.image} alt={`${s.title} (illustrative image)`} fill sizes="(min-width:1024px) 33vw, 100vw" className="object-cover transition duration-700 group-hover:scale-105" />
                     <div className="absolute inset-0 bg-gradient-to-t from-[#002545]/75 via-transparent" />

@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 export default async function SolutionsPage() {
   const cats = await getCategories();
   return (
-    <>
+    <div id="solutions">
       <SolutionsHero />
       {SOLUTIONS.map((s, i) => {
         const divisionBadgeTone =
@@ -27,7 +27,7 @@ export default async function SolutionsPage() {
         const isAlternate = i % 2 === 1;
 
         return (
-          <section key={s.slug} id={s.slug} className={`section-y scroll-mt-16 ${isAlternate ? "bg-[#E8EDF2]" : "bg-white"}`}>
+          <section key={s.slug} id={s.slug} className={`section-y scroll-mt-24 ${isAlternate ? "bg-[#E8EDF2]" : "bg-white"}`}>
             <div className="container-x grid items-center gap-12 lg:grid-cols-2 lg:gap-20">
               <Reveal className={isAlternate ? "lg:order-2" : ""}>
                 <div className="relative aspect-[4/3] overflow-hidden rounded-xl border border-[#C4CCD4] shadow-lift">
@@ -63,6 +63,6 @@ export default async function SolutionsPage() {
           </section>
         );
       })}
-    </>
+    </div>
   );
 }

@@ -4,7 +4,7 @@ import * as React from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { motion, AnimatePresence } from "motion/react";
-import { ArrowRight } from "lucide-react";
+import { ArrowRight, ChevronDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 export interface SolutionSlide {
@@ -63,7 +63,40 @@ export function SolutionsHero() {
     return () => clearInterval(timer);
   }, [current]);
 
+  // Synchronize hash on initial load or popstate
+  React.useEffect(() => {
+    if (typeof window === "undefined") return;
+
+    const syncFromHash = () => {
+      const hash = window.location.hash.replace("#", "");
+      if (!hash) return;
+      const idx = SOLUTION_SLIDES.findIndex((s) => s.rfqDivision === hash || s.id === hash);
+      if (idx !== -1) {
+        setCurrent(idx);
+      }
+    };
+
+    syncFromHash();
+    window.addEventListener("hashchange", syncFromHash);
+    return () => window.removeEventListener("hashchange", syncFromHash);
+  }, []);
+
   const slide = SOLUTION_SLIDES[current];
+
+  const handleExplore = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    if (typeof window === "undefined") return;
+
+    const targetId = slide.rfqDivision;
+    // Find target division card/section or generic solutions section on active page
+    const el = document.getElementById(targetId) || document.getElementById("solutions");
+    if (el) {
+      e.preventDefault();
+      el.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (window.history?.pushState) {
+        window.history.pushState(null, "", `#${targetId}`);
+      }
+    }
+  };
 
   return (
     <section
@@ -129,7 +162,12 @@ export function SolutionsHero() {
                   </Link>
                 </Button>
                 <Button asChild size="lg" variant="outline-light">
-                  <Link href="/solutions">Explore Solutions</Link>
+                  <Link
+                    href={`/solutions#${slide.rfqDivision}`}
+                    onClick={handleExplore}
+                  >
+                    Explore Solutions <ChevronDown className="size-4" />
+                  </Link>
                 </Button>
               </div>
             </motion.div>
