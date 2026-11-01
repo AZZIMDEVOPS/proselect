@@ -4,6 +4,7 @@ export const SITE = {
   tagline: "Global Manufacturing. Local Expertise. Smarter Procurement.",
   url: process.env.NEXT_PUBLIC_SITE_URL ?? "https://www.proselectimports.com",
   email: "info@proselectimports.com",
+  operationalEmail: "kennahkent50@gmail.com",
   domain: "www.proselectimports.com",
   location: "Nairobi, Kenya",
   description:

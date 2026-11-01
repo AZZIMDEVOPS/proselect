@@ -118,7 +118,15 @@ export async function submitRfq(raw: unknown): Promise<ActionResult> {
   await Promise.all([
     notifySales(`New RFQ ${rfq.reference} — ${v.company}`, rfqSalesAlert({
       reference: rfq.reference, company: v.company, contact: v.contact, email: v.email, phone: v.phone, category,
-      location: v.location, items: itemLabels, url: `${SITE.url}/admin/rfqs/${rfq.id}`,
+      location: `${v.location}${v.countyCountry ? ` (${v.countyCountry})` : ""}`,
+      intendedApplication: v.application,
+      procurementTimeline: v.timeline,
+      deliveryDestination: v.destination,
+      deliveryArrangement: v.arrangement,
+      logisticsSupport: v.logisticsSupport.join(", ") || null,
+      additionalRequirements: v.additional || null,
+      items: itemLabels,
+      url: `${SITE.url}/admin/rfqs/${rfq.id}`,
     }), v.email),
     sendMail({ to: v.email, subject: `RFQ ${rfq.reference} received — ProSelect`, html: rfqClientAck({ reference: rfq.reference, contact: v.contact, items: itemLabels }) }),
   ]);

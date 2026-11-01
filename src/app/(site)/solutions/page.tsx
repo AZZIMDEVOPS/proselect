@@ -2,10 +2,10 @@ import type { Metadata } from "next";
 import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, Check } from "lucide-react";
-import { PageHero } from "@/components/site/sections";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Reveal } from "@/components/ui/reveal";
+import { SolutionsHero } from "@/components/site/solutions-hero";
 import { getCategories } from "@/lib/data/catalogue";
 import { SOLUTIONS } from "@/lib/site";
 
@@ -20,9 +20,7 @@ export default async function SolutionsPage() {
   const cats = await getCategories();
   return (
     <>
-      <PageHero eyebrow="Solutions" title="Industrial procurement across three specialist divisions." image="/images/solution-machinery.jpg">
-        Electric mobility, renewable energy and heavy machinery — each sourced directly from international manufacturers and matched to your project specification.
-      </PageHero>
+      <SolutionsHero />
       {SOLUTIONS.map((s, i) => {
         const divisionBadgeTone =
           s.division === "electric-mobility" ? "fleet" : s.division === "heavy-machinery" ? "industrial" : "navy";

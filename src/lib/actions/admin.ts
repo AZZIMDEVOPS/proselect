@@ -6,7 +6,7 @@ import { createAdminClient } from "@/lib/supabase/admin";
 import { audit } from "@/lib/audit";
 import { renderQuotationPdf } from "@/lib/pdf/quotation-pdf";
 import { quoteTotals, type QItem } from "@/lib/quote";
-import { genericAck, sendMail } from "@/lib/email";
+import { genericAck, sendMail, notifySales, quotationSalesAlert, salesInbox } from "@/lib/email";
 import { SITE } from "@/lib/site";
 import { clean, slugify } from "@/lib/utils";
 import { COMMERCIAL_ROLES, OPS_ROLES, STAFF_ROLES, ORDER_STAGES, type Division, type Role, type Spec, type ConfigOption } from "@/lib/types";
@@ -224,6 +224,26 @@ export async function saveQuotation(input: SaveQuotationInput): Promise<AdminRes
     });
     if (costErr) throw costErr;
 
+    const { data: rfqRow } = await db.from("rfqs").select("reference,company_name,contact_person").eq("id", input.rfq_id).maybeSingle();
+    const { data: qRecord } = await db.from("quotations").select("reference,version").eq("id", qId).maybeSingle();
+    const qRef = qRecord?.reference ?? "PS-QTN";
+    const qVer = qRecord?.version ?? 1;
+    const totals = quoteTotals(items, Number(input.logistics_charge), Number(input.other_charges), Number(input.tax_rate));
+    await notifySales(
+      `Quotation ${input.id ? "Updated" : "Created"}: ${qRef} (v${qVer})`,
+      quotationSalesAlert({
+        action: input.id ? "updated" : "created",
+        quotationReference: qRef,
+        version: qVer,
+        rfqReference: rfqRow?.reference ?? null,
+        clientCompany: rfqRow?.company_name ?? "Client",
+        clientContact: rfqRow?.contact_person ?? null,
+        totalFormatted: `${input.currency} ${totals.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`,
+        currency: input.currency,
+        url: `${SITE.url}/admin/quotations/${qId}`,
+      }),
+    );
+
     await audit({ id: actor.id, email: actor.email }, input.id ? "quotation.updated" : "quotation.created", "quotation", qId);
     revalidateAll(`/admin/quotations`, `/admin/quotations/${qId}`, `/admin/rfqs/${input.rfq_id}`);
     return { ok: true, data: { id: qId } };
@@ -299,15 +319,17 @@ export async function sendQuotationToClient(quotationId: string): Promise<AdminR
         paymentTerms: q.payment_terms, commercialTerms: q.commercial_terms,
       });
 
+      const allRecipients = Array.from(new Set([rfq.email, ...salesInbox()]));
       await sendMail({
-        to: rfq.email,
-        subject: `Commercial Quotation ${q.reference} (v${q.version}) — ProSelect`,
+        to: allRecipients,
+        subject: `Commercial Quotation ${q.reference} (v${q.version}) — Proselect`,
         html: genericAck(
           `Commercial Quotation ${q.reference}`,
           rfq.contact_person,
           [
             `Attached is commercial quotation ${q.reference} (Version ${q.version}) for RFQ ${rfq.reference}.`,
-            `You may also review itemised pricing, download the PDF and record your response in the ProSelect Client Portal at ${SITE.url}/portal/quotations/${quotationId}.`,
+            `Total value: ${q.currency} ${totals.total.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}.`,
+            `You may also review itemised pricing, download the PDF and record your response in the Proselect Client Portal at ${SITE.url}/portal/quotations/${quotationId}.`,
           ],
         ),
         attachments: [{ filename: `${q.reference}-v${q.version}.pdf`, content: pdf }],

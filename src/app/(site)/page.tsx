@@ -10,6 +10,7 @@ import { SectionHead } from "@/components/site/sections";
 import { ProcessTimeline } from "@/components/site/process";
 import { ProductCard } from "@/components/catalogue/product-card";
 import { EmptyState } from "@/components/ui/card";
+import { SolutionsHero } from "@/components/site/solutions-hero";
 import { getFeatured } from "@/lib/data/catalogue";
 import { INDUSTRIES, SOLUTIONS } from "@/lib/site";
 
@@ -30,36 +31,8 @@ export default async function HomePage() {
   const featured = await getFeatured(6);
   return (
     <>
-      {/* 2. HERO */}
-      <section className="relative isolate flex min-h-[calc(100svh-76px)] items-center overflow-hidden bg-[#002545] text-white">
-        <Image src="/images/hero.jpg" alt="Commercial electric shuttle, excavator and solar power systems on an infrastructure project (illustrative image)" fill priority sizes="100vw" className="-z-20 animate-[kenburns_28s_ease-out_forwards] object-cover opacity-50" />
-        <div className="absolute inset-0 -z-10 bg-gradient-to-r from-[#002545] via-[#002545]/85 to-[#002545]/30" />
-        <div className="absolute inset-x-0 bottom-0 -z-10 h-36 bg-gradient-to-t from-[#002545] to-transparent" />
-        <div className="container-x py-24">
-          <HeroReveal>
-            <p className="inline-flex items-center gap-3 text-xs font-bold uppercase tracking-[0.22em] text-[#C9A227]">
-              <span className="h-px w-10 bg-[#C9A227]" /> Nairobi · Global Manufacturing · East Africa
-            </p>
-          </HeroReveal>
-          <HeroReveal delay={0.12}>
-            <h1 className="h-display mt-6 max-w-4xl !text-white">DIRECT FACTORY ACCESS. SMARTER INDUSTRIAL PROCUREMENT.</h1>
-          </HeroReveal>
-          <HeroReveal delay={0.25}>
-            <p className="mt-7 max-w-2xl text-base leading-relaxed text-[#C4CCD4] sm:text-lg lg:text-xl">
-              Connecting East African enterprises directly with verified international manufacturers through tailored sourcing, technical procurement and dedicated local business development partnerships.
-            </p>
-          </HeroReveal>
-          <HeroReveal delay={0.38}>
-            <div className="mt-10 flex flex-col gap-3 sm:flex-row">
-              <Button asChild size="lg" variant="accent"><Link href="/solutions">Explore Our Solutions <ArrowRight /></Link></Button>
-              <Button asChild size="lg" variant="outline-light"><Link href="/manufacturer-partnerships">Become a Manufacturer Partner</Link></Button>
-            </div>
-          </HeroReveal>
-        </div>
-        <a href="#introduction" aria-label="Scroll to introduction" className="absolute bottom-6 left-1/2 hidden -translate-x-1/2 flex-col items-center gap-1 text-[10px] font-semibold uppercase tracking-[0.25em] text-[#C4CCD4] sm:flex">
-          Scroll <ChevronDown className="size-5 animate-scroll-cue" aria-hidden />
-        </a>
-      </section>
+      {/* 2. DYNAMIC SOLUTIONS HERO (Interactive Backgrounds, Headings & Divisions) */}
+      <SolutionsHero />
 
       {/* 3. INTRODUCTION (White) */}
       <section id="introduction" className="section-y scroll-mt-20 bg-white">

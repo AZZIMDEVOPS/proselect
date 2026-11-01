@@ -7,6 +7,7 @@ import { loginSchema, registerSchema } from "@/lib/validation";
 import { looksLikeBot, rateLimit, verifyTurnstile } from "@/lib/spam";
 import { isServiceRoleConfigured } from "@/lib/supabase/config";
 import { audit } from "@/lib/audit";
+import { genericAlert, notifySales } from "@/lib/email";
 import { STAFF_ROLES, type Role } from "@/lib/types";
 
 export type AuthState = { error?: string; fieldErrors?: Record<string, string>; info?: string } | undefined;
@@ -50,6 +51,17 @@ export async function signUp(_: AuthState, fd: FormData): Promise<AuthState> {
     options: { data: { full_name: v.fullName, company_name: v.company, phone: v.phone }, emailRedirectTo: `${origin}/auth/callback?next=/portal` },
   });
   if (error) return { error: error.message.includes("registered") ? "An account with this email may already exist. Try signing in." : "We could not create your account. Please try again." };
+
+  await notifySales(
+    `New Client Registration: ${v.company || v.fullName}`,
+    genericAlert("New Client Account Registered", [
+      ["Full Name", v.fullName],
+      ["Company", v.company || "Not specified"],
+      ["Email Address", v.email],
+      ["Phone Number", v.phone || "Not specified"],
+    ])
+  );
+
   if (data.session) redirect("/portal");
   return { info: "Account created. Check your email to confirm your address, then sign in." };
 }

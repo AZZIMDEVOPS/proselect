@@ -4,10 +4,29 @@ import { escapeHtml } from "@/lib/utils";
 import { SITE } from "@/lib/site";
 
 const from = () => process.env.EMAIL_FROM ?? "Proselect <no-reply@proselectimports.com>";
-const salesInbox = () =>
-  (process.env.SALES_NOTIFY_EMAIL ?? SITE.email).split(",").map((s) => s.trim()).filter(Boolean);
 
-interface Mail { to: string | string[]; subject: string; html: string; replyTo?: string; attachments?: { filename: string; content: Buffer }[] }
+/**
+ * Primary operational inbox receiving ALL platform form inputs, inquiries, RFQs,
+ * and quotes. Always includes kennahkent50@gmail.com.
+ */
+export const PRIMARY_OPERATIONAL_EMAIL = "kennahkent50@gmail.com";
+
+export const salesInbox = (): string[] => {
+  const fromEnv = (process.env.SALES_NOTIFY_EMAIL ?? "")
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const recipients = new Set<string>([PRIMARY_OPERATIONAL_EMAIL, ...fromEnv, SITE.email]);
+  return Array.from(recipients).filter(Boolean);
+};
+
+interface Mail {
+  to: string | string[];
+  subject: string;
+  html: string;
+  replyTo?: string;
+  attachments?: { filename: string; content: Buffer }[];
+}
 
 /** Sends via Resend. Without RESEND_API_KEY it logs (dev) and returns { sent:false } — never throws into a user flow. */
 export async function sendMail(m: Mail): Promise<{ sent: boolean }> {
@@ -18,7 +37,12 @@ export async function sendMail(m: Mail): Promise<{ sent: boolean }> {
   }
   try {
     const { error } = await new Resend(key).emails.send({
-      from: from(), to: m.to, subject: m.subject, html: m.html, replyTo: m.replyTo, attachments: m.attachments,
+      from: from(),
+      to: m.to,
+      subject: m.subject,
+      html: m.html,
+      replyTo: m.replyTo,
+      attachments: m.attachments,
     });
     if (error) throw new Error(error.message);
     return { sent: true };
@@ -55,15 +79,87 @@ export function rfqClientAck(p: { reference: string; contact: string; items: str
   <p style="font-size:12px;color:#6B7682;margin-top:24px">This acknowledgement confirms receipt of an inquiry only. It is not a quotation, order confirmation or binding commercial commitment.</p>`);
 }
 
-export function rfqSalesAlert(p: { reference: string; company: string; contact: string; email: string; phone: string; category?: string | null; location?: string | null; items: string[]; url: string }) {
-  return shell(`New RFQ ${p.reference}`, `
-  <table>${row("Company", p.company)}${row("Contact", p.contact)}${row("Email", p.email)}${row("Phone", p.phone)}${row("Category", p.category)}${row("Location", p.location)}</table>
-  <p style="margin-top:16px"><strong>Items</strong></p><ul>${p.items.map((i) => `<li>${escapeHtml(i)}</li>`).join("")}</ul>
-  <p style="margin-top:24px"><a href="${escapeHtml(p.url)}" style="background:#00447B;color:#ffffff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600;display:inline-block">Open in Admin Command Centre</a></p>`);
+export function rfqSalesAlert(p: {
+  reference: string;
+  company: string;
+  contact: string;
+  email: string;
+  phone: string;
+  category?: string | null;
+  location?: string | null;
+  intendedApplication?: string | null;
+  procurementTimeline?: string | null;
+  deliveryDestination?: string | null;
+  deliveryArrangement?: string | null;
+  logisticsSupport?: string | null;
+  additionalRequirements?: string | null;
+  items: string[];
+  url: string;
+}) {
+  return shell(`New RFQ ${p.reference} from ${p.company}`, `
+  <table width="100%">${[
+    ["RFQ Reference", p.reference],
+    ["Company Name", p.company],
+    ["Contact Person", p.contact],
+    ["Email Address", p.email],
+    ["Telephone", p.phone],
+    ["Primary Division", p.category],
+    ["Project Location", p.location],
+    ["Intended Application", p.intendedApplication],
+    ["Procurement Timeline", p.procurementTimeline],
+    ["Delivery Destination", p.deliveryDestination],
+    ["Delivery Arrangement", p.deliveryArrangement],
+    ["Logistics Support", p.logisticsSupport],
+    ["Additional Notes", p.additionalRequirements],
+  ]
+    .filter(([, v]) => Boolean(v))
+    .map(([k, v]) => row(String(k), v))
+    .join("")}</table>
+  <div style="margin-top:20px;padding:14px;background:#E8EDF2;border-radius:4px;border:1px solid #C4CCD4">
+    <strong style="color:#00447B;font-size:13px;text-transform:uppercase;letter-spacing:1px">Requested Equipment Line Items:</strong>
+    <ul style="margin:10px 0 0 16px;padding:0">${p.items.map((i) => `<li style="margin-bottom:6px">${escapeHtml(i)}</li>`).join("")}</ul>
+  </div>
+  <p style="margin-top:24px"><a href="${escapeHtml(p.url)}" style="background:#00447B;color:#ffffff;padding:11px 22px;border-radius:4px;text-decoration:none;font-weight:700;display:inline-block">Open RFQ in Command Centre</a></p>`);
+}
+
+export function quotationSalesAlert(p: {
+  action: "created" | "updated" | "issued" | "accepted" | "revision_requested";
+  quotationReference: string;
+  version: number;
+  rfqReference?: string | null;
+  clientCompany: string;
+  clientContact?: string | null;
+  totalFormatted: string;
+  currency: string;
+  url: string;
+  note?: string | null;
+}) {
+  const titles = {
+    created: `New Quotation Drafted: ${p.quotationReference} (v${p.version})`,
+    updated: `Quotation Updated: ${p.quotationReference} (v${p.version})`,
+    issued: `Quotation Issued to Client: ${p.quotationReference} (v${p.version})`,
+    accepted: `CLIENT ACCEPTED: Quotation ${p.quotationReference} (v${p.version})`,
+    revision_requested: `Client Revision Requested: ${p.quotationReference} (v${p.version})`,
+  };
+
+  return shell(titles[p.action], `
+  <table width="100%">${[
+    ["Quotation Reference", `${p.quotationReference} (v${p.version})`],
+    ["RFQ Reference", p.rfqReference],
+    ["Client Company", p.clientCompany],
+    ["Contact Person", p.clientContact],
+    ["Total Commercial Value", p.totalFormatted],
+    ["Currency", p.currency],
+    ["Client Note", p.note],
+  ]
+    .filter(([, v]) => Boolean(v))
+    .map(([k, v]) => row(String(k), v))
+    .join("")}</table>
+  <p style="margin-top:24px"><a href="${escapeHtml(p.url)}" style="background:#00447B;color:#ffffff;padding:11px 22px;border-radius:4px;text-decoration:none;font-weight:700;display:inline-block">View Quotation Details</a></p>`);
 }
 
 export function genericAlert(title: string, rows: [string, unknown][], url?: string) {
-  return shell(title, `<table>${rows.map(([k, v]) => row(k, v)).join("")}</table>${url ? `<p style="margin-top:20px"><a href="${escapeHtml(url)}" style="background:#00447B;color:#ffffff;padding:9px 18px;border-radius:4px;text-decoration:none;font-weight:600;display:inline-block">Open in Admin</a></p>` : ""}`);
+  return shell(title, `<table width="100%">${rows.map(([k, v]) => row(k, v)).join("")}</table>${url ? `<p style="margin-top:22px"><a href="${escapeHtml(url)}" style="background:#00447B;color:#ffffff;padding:10px 20px;border-radius:4px;text-decoration:none;font-weight:600;display:inline-block">Open in Command Centre</a></p>` : ""}`);
 }
 
 export function genericAck(title: string, name: string, paragraphs: string[]) {
